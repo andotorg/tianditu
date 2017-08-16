@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+<meta http-equiv="content-type" content="text/html; charset=utf-8"/>
+
+<meta name="keywords" content="天地图"/>
+
+<title>天地图实现地图上按照省份市区显示百度Echarts统计柱状图-andot.org</title>
+
+<style type="text/css">
+    .asyBox{
+        background-color: #fff;
+        box-shadow: 0 0 20px rgba(0,0,0,.5);
+        color:#000;
+        padding: 5px;
+        width:280px; 
+        height:180px;
+        border-radius: 5px;
+    }
+    .asyBox>span{
+        font-size: 14px;
+        margin-bottom: 5px;
+    }
+</style>
+<script type="text/javascript" src="http://api.tianditu.com/js/maps.js"></script>
+<script type="text/javascript" src="http://api.tianditu.com/js/service.js"></script>
+<script type="text/javascript" src="http://echarts.baidu.com/vendors/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="http://jngffp.com/include/img/main/js/echarts.min.js"></script>
+<script>
+    /*
+    *  config data
+    *  create by andot
+    *  date in 2017-8-16
+    */
+    var citys = ["山东", "山西", "河南", "河北"];
+    var citysId = [1, 2, 3, 4];
+    var resultCity = [];
+    var customerWinInfo=null;
+    var pointsArr = [];   //坐标数组，设置最佳比例尺时会用到
+    var map;
+    var zoom = 12;
+    var localsearch;
+
+    $(function(){
+        onLoadMap();
+    });
+
+
+    /*
+    *  page loaded load map
+    *  create by andot
+    *  date in 2017-8-16
+    */
+    function onLoadMap(){
+        map=new TMap("mapDiv");  //initialize map object
+        map.centerAndZoom(new TLngLat(116.40969,39.89945),zoom);  //setting map center
+        map.enableHandleMouseScroll();   //允许鼠标滚轮缩放地图
+        map.enableDoubleClickZoom();   //允许双击地图放大
+        var config = {
+            pageCapacity:10,    //page show count
+            onSearchComplete:localSearchResult  //callback method
+        };
+        localsearch = new TLocalSearch(map,config);  //create search object
+        //map loading completed 
+        init();
+    }
+
+    /*
+    *  initiatlze search pro/city/county data
+    *  create by andot
+    *  date in 2017-8-16 19:43:29
+    */
+    function init(){
+        for (var i = 0; i < citys.length; i++) {
+            localsearch.search(citys[i]);
+        }
+    }
+
+    /*
+    *  callback data save numer 
+    *  create by andot
+    *  date in 2017-8-16
+    */
+    function localSearchResult(result){
+        resultCity.push(result);
+    }
+
+    /*
+    *  解析行政区划边界
+    *  create by andot
+    *  date in 2017-8-16
+    */
+    function area(obj, num){
+        if(obj){
+            var points = obj.points;
+            for(var i=0;i<points.length;i++){
+                var regionLngLats = [];
+                var regionArr = points[i].region.split(",");
+                for(var m=0;m<regionArr.length;m++){
+                    var lnglatArr = regionArr[m].split(" ");
+                    var lnglat = new TLngLat(lnglatArr[0],lnglatArr[1]);
+                    regionLngLats.push(lnglat);
+                    if(m==300)
+                        pointsArr.push(lnglat);
+                }
+                //创建线对象
+                var line = new TPolyline(regionLngLats,{strokeColor:"red", strokeWeight:3, strokeOpacity:1, strokeStyle:"solid"});
+                //向地图上添加线
+                map.addOverLay(line);
+            }
+
+            var html = [];
+            html.push('<div class="asyBox"><span id="name'+num+'"></span><br/><div id="onechar'+num+'" style="width:280px; height:180px;"></div><div>');
+            var config = {
+                offset:new TPixel(-240,30),
+                position:pointsArr[num]
+             };
+             customerWinInfo = new TLabel(config);
+             customerWinInfo.setTitle(citys[num]);
+             customerWinInfo.setLabel(html.join(''));
+             customerWinInfo.getObject().style.zIndex = 10000;
+             customerWinInfo.getObject().setAttribute("class", "box");
+             map.addOverLay(customerWinInfo);
+            //显示最佳比例尺
+            map.setViewport(pointsArr);
+            loadEcharts(num);
+        }
+    }
+
+
+    /*
+    *  baidu echarts chart show in dialog
+    *  create by andot
+    *  date in 2017-8-16 19:43:29
+    */
+    function loadEcharts(num){
+        document.getElementById("name"+num).innerText = citys[num]+"地区降水量, 加载数据的ID："+citysId[num];
+        var e = echarts.init(document.getElementById("onechar"+num));
+        var option = {
+            tooltip : {
+                trigger: 'axis'
+            },
+            legend: {
+                data:['蒸发量','降水量']
+            },
+            grid: {
+                left: '3%',
+                right: '4%',
+                bottom: '3%',
+                top: '15%',
+                containLabel: true
+            },
+            xAxis : [
+                {
+                    type : 'category',
+                    data : ['1月','2月','3月','4月','5月','6月']
+                }
+            ],
+            yAxis : [
+                {
+                    type : 'value'
+                }
+            ],
+            series : [
+                {
+                    name:'降水量',
+                    type:'bar',
+                    itemStyle:{
+                        normal:{
+                            color:"green"
+                        }
+                    },
+                    data:[2.6, 5.9, 9.0, 26.4, 28.7, 70.7]
+                }
+            ]
+        };
+
+        //TODO   add ajax load data
+
+        e.setOption(option);
+    }
+
+
+    
+
+    
+    /*
+    *  show chart in map
+    *  create by andot
+    *  date in 2017-8-16 19:43:29
+    */
+    function asyShow(){
+        //闭包
+        (function(rc, c){
+            console.log(rc);
+            for (var i = 0; i < c.length; i++) {
+                area(rc[i].getArea(), i);
+            }
+        })(resultCity, citys);
+        $(".box").css("border", "0");
+        $(".box").css("background-color", "");
+    }
+
+</script>
+</head>
+<body>
+    <input type="button" onClick="asyShow()" value="加载统计图"/>
+    <br>
+    <div id="mapDiv" style="position:absolute;width:100%; height:800px;"></div>
+    
+</body>
+</html>
