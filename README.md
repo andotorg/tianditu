@@ -14,4 +14,4 @@
 
 >Demo截图展示
 
-![image]()
+![image](https://github.com/andotorg/tianditu/blob/master/mapasy.jpg)
