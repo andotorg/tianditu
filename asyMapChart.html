@@ -35,8 +35,11 @@
     *  date in 2017-8-16
     */
     var citys = ["山东", "山西", "河南", "河北"];
+    var citysNew = [];
     var citysId = [1, 2, 3, 4];
-    var resultCity = [];
+    var cityNumber = [1, 2, 3, 4];
+    var resultCity = []; //新 为了防止加载位置错误
+    var citysIdNew = [];//新 为了防止加载位置错误
     var customerWinInfo=null;
     var pointsArr = [];   //坐标数组，设置最佳比例尺时会用到
     var map;
@@ -74,6 +77,7 @@
     */
     function init(){
         for (var i = 0; i < citys.length; i++) {
+            console.log(citys[i] + "=====>" + i);
             localsearch.search(citys[i]);
         }
     }
@@ -114,7 +118,7 @@
             var html = [];
             html.push('<div class="asyBox"><span id="name'+num+'"></span><br/><div id="onechar'+num+'" style="width:280px; height:180px;"></div><div>');
             var config = {
-                offset:new TPixel(-240,30),
+                offset:new TPixel(-300,30),
                 position:pointsArr[num]
              };
              customerWinInfo = new TLabel(config);
@@ -136,7 +140,7 @@
     *  date in 2017-8-16 19:43:29
     */
     function loadEcharts(num){
-        document.getElementById("name"+num).innerText = citys[num]+"地区降水量, 加载数据的ID："+citysId[num];
+        document.getElementById("name"+num).innerText = citysNew[num]+"地区降水量, 加载数据的ID："+citysIdNew[num];
         var e = echarts.init(document.getElementById("onechar"+num));
         var option = {
             tooltip : {
@@ -148,10 +152,11 @@
             grid: {
                 left: '3%',
                 right: '4%',
-                bottom: '3%',
+                bottom: '10%',
                 top: '15%',
                 containLabel: true
             },
+            calculable : true,
             xAxis : [
                 {
                     type : 'category',
@@ -181,10 +186,6 @@
 
         e.setOption(option);
     }
-
-
-    
-
     
     /*
     *  show chart in map
@@ -196,11 +197,25 @@
         (function(rc, c){
             console.log(rc);
             for (var i = 0; i < c.length; i++) {
+                citysIdNew.push(citysId[getArraySub(citys, rc[i].keyWord)]);
+                citysNew.push(rc[i].keyWord);
                 area(rc[i].getArea(), i);
             }
         })(resultCity, citys);
         $(".box").css("border", "0");
         $(".box").css("background-color", "");
+    }
+
+    /*
+    *  get array subscript
+    *  create by andot
+    *  date in 2017-8-17
+    */
+    function getArraySub(array, element){
+        for (var i = 0; i < array.length; i++) {
+            if(element == array[i])
+                return i;
+        }
     }
 
 </script>
